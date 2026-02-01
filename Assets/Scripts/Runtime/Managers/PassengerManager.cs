@@ -13,6 +13,15 @@ namespace Runtime.Managers
         #region Public Variables
 
         public PassengerColorType ColorType => colorType;
+        public void ChangeOutLine(float intensity)
+        { 
+            
+            meshRenderer.GetPropertyBlock(_propertyBlock);
+          
+            _propertyBlock.SetFloat("_OutlineSize", intensity);
+              
+            meshRenderer.SetPropertyBlock(_propertyBlock);
+        }
 
         #endregion
 
@@ -22,11 +31,13 @@ namespace Runtime.Managers
         [SerializeField] private MeshRenderer meshRenderer;
         [SerializeField] private CD_ColorData colorData;
 
+   
         #endregion
 
         #region Private Variables
 
 
+        private MaterialPropertyBlock _propertyBlock;
         #endregion
 
         #endregion
@@ -34,16 +45,20 @@ namespace Runtime.Managers
 
         private void Awake()
         {
+           
             var randomColor = UnityEngine.Random.Range(1, Enum.GetNames(typeof(PassengerColorType)).Length);
             colorType = (PassengerColorType)randomColor;
+            _propertyBlock = new MaterialPropertyBlock();
             SetColor();
         }
 
         private void SetColor()
         {
+           
             var colorMaterial = colorData.GetMaterial(colorType);
-            
             meshRenderer.sharedMaterial = colorMaterial;
+            
+           
         }
 
      
