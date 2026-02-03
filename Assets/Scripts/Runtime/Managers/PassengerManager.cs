@@ -1,8 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Runtime.Data.UnityObject;
 using Runtime.Enums;
 using Runtime.Interfaces;
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Runtime.Managers
@@ -81,7 +83,30 @@ namespace Runtime.Managers
             }
         }
 
-    
+
+        [Button]
+        public void OnWalk()
+        {
+            StartCoroutine(StarWalk());
+        }
+
+        
+        private IEnumerator StarWalk()
+        {
+            if (_isReadyToWalk && Path.Count > 0)
+            {
+                foreach (var position in Path)
+                {
+                    Vector3 targetPosition = new Vector3(position.x, transform.position.y, position.y);
+                    while (Vector3.Distance(transform.position, targetPosition) > 0.1f)
+                    {
+                        transform.position = Vector3.MoveTowards(transform.position, targetPosition, Time.deltaTime * 2f);
+                        yield return null;
+                    }
+                    yield return new WaitForSeconds(0.1f);
+                }
+            }
+        }
     }
 
 }

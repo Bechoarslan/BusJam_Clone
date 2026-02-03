@@ -261,8 +261,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55ee7d0aad7140ae97c05b547978e881, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Row: 7
-  Column: 7
+  Row: 3
+  Column: 3
   gridPrefab: {fileID: 6754358243383091141, guid: 5228f799e076642dcb873a75fda33f9f,
     type: 3}
   passengerPrefab: {fileID: 3742247386706058212, guid: 5e111ee7d7ea647389be6130b580e7e2,

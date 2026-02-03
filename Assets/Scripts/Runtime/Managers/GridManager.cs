@@ -101,11 +101,11 @@ namespace Runtime.Managers
             {
                 var visited = new HashSet<Vector2Int>();
                 var queue = new Queue<Vector2Int>();
-                var list = new List<Vector2Int>();
+                var cameFrom = new Dictionary<Vector2Int, Vector2Int>();
                 var startPos = kvp.Key;
                 var cell = kvp.Value;
               
-                
+                var pathFound = false;
                 if (cell == null || !cell.IsOccupied  || cell.IsReadyToWalk) continue;
                 if (visited.Contains(startPos)) continue;
 
@@ -130,15 +130,10 @@ namespace Runtime.Managers
                                 Debug.Log("Found unoccupied cell at: " + next);
                                 visited.Add(next);
                                 queue.Enqueue(next);
-                                list.Add(next);
-                              
-                            
+                                cameFrom[next] = current;
+                                
                                 
                             }
-
-                           
-                          
-                            
                             
                         }
 
@@ -147,24 +142,54 @@ namespace Runtime.Managers
                          if (_waitingCells.Contains(next))
                         {
                             
-                            Debug.Log("Passenger at " + startPos + " can move to waiting cell at: " + next);
+                            visited.Add(next);
+                            cameFrom[next] = current;
+
                             var passengerObj = cell.PassengerObject;
-                            if (passengerObj == null) continue;
+                            if (passengerObj == null) return;
+
+                            var path = ReconstructPath(cameFrom, startPos, next);
+
+                          
+                            for (int i = 0; i < path.Count - 1; i++)
+                            { 
+                                  Debug.Log("Start Pos" + startPos +" Step: " + path[i]);
+                            }
                             passengerObj.GetComponent<IPassenger>().IsReadyToWalk(true);
-                            passengerObj.GetComponent<IPassenger>().Path.AddRange(list);
-                            Debug.Log(list.Count);
+                            passengerObj.GetComponent<IPassenger>().Path.AddRange(path);
+
                             cell.IsReadyToWalk = true;
-
-
+                            pathFound = true;
+                            break;
                         }
                        
                       
                     }
+                    if (pathFound) break;
                     
                 }
                 visited.Clear();
                 queue.Clear();
             }
+        }
+
+        private List<Vector2Int> ReconstructPath(
+            Dictionary<Vector2Int, Vector2Int> cameFrom,
+            Vector2Int start,
+            Vector2Int end)
+        {
+            var path = new List<Vector2Int>();
+            var current = end;
+
+            while (current != start)
+            {
+                path.Add(current);
+                current = cameFrom[current];
+            }
+
+            path.Add(start);
+            path.Reverse();
+            return path;
         }
 
 
@@ -190,7 +215,10 @@ namespace Runtime.Managers
         
         private List<Vector2Int> GetListPosition()
         {
-            return new  List<Vector2Int>(){Vector2Int.up, Vector2Int.right, Vector2Int.left};
+            return new  List<Vector2Int>(){Vector2Int.up,
+                Vector2Int.right,
+                Vector2Int.down,
+                Vector2Int.left};
         }
     }
 }
