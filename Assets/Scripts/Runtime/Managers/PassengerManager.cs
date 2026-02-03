@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Runtime.Data.UnityObject;
 using Runtime.Enums;
 using Runtime.Interfaces;
@@ -10,19 +11,14 @@ namespace Runtime.Managers
     {
         #region Self Variables
 
+    
         #region Public Variables
 
+        [SerializeField]public List<Vector2Int> Path { get; set; }
         public PassengerColorType ColorType => colorType;
-        public void ChangeOutLine(float intensity)
-        { 
-            
-            meshRenderer.GetPropertyBlock(_propertyBlock);
-          
-            _propertyBlock.SetFloat("_OutlineSize", intensity);
-              
-            meshRenderer.SetPropertyBlock(_propertyBlock);
-        }
+       
 
+        
         #endregion
 
         #region Serialized Variables
@@ -32,6 +28,7 @@ namespace Runtime.Managers
         [SerializeField] private CD_ColorData colorData;
 
    
+        private bool _isReadyToWalk;
         #endregion
 
         #region Private Variables
@@ -43,6 +40,8 @@ namespace Runtime.Managers
         #endregion
 
 
+        
+
         private void Awake()
         {
            
@@ -50,6 +49,7 @@ namespace Runtime.Managers
             colorType = (PassengerColorType)randomColor;
             _propertyBlock = new MaterialPropertyBlock();
             SetColor();
+            Path = new List<Vector2Int>();
         }
 
         private void SetColor()
@@ -61,7 +61,27 @@ namespace Runtime.Managers
            
         }
 
-     
+        public void IsReadyToWalk(bool value)
+        {
+            _isReadyToWalk = value;
+            if (value)
+            {
+                meshRenderer.GetPropertyBlock(_propertyBlock);
+                
+                _propertyBlock.SetFloat("_OutlineSize", 5);
+                meshRenderer.SetPropertyBlock(_propertyBlock);
+            }
+            else
+            {
+                meshRenderer.GetPropertyBlock(_propertyBlock);
+          
+                _propertyBlock.SetFloat("_OutlineSize", 0);
+              
+                meshRenderer.SetPropertyBlock(_propertyBlock);
+            }
+        }
+
+    
     }
 
 }

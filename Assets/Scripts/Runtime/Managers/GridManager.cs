@@ -23,8 +23,10 @@ namespace Runtime.Managers
 
         #region Private Variables
         
-        private Dictionary<GridData,CellData> _gridData = new Dictionary<GridData, CellData>();
+        private Dictionary<Vector2Int,CellData> _gridData = new Dictionary<Vector2Int, CellData>();
+        private HashSet<Vector2Int> _waitingCells = new HashSet<Vector2Int>();
         private Transform _gridParent;
+        [SerializeField]private List<GameObject> _path = new List<GameObject>();
          #endregion
 
         #endregion
@@ -33,12 +35,13 @@ namespace Runtime.Managers
         private void Awake()
         {
             CreateGrid();
-            
+            CreateWaitingGrid();
+            CheckGridIsOccupied();
         }
 
         private void CreateGrid()
         {
-            CreateWaitingGrid();
+            
             var parent = new GameObject("Grid");
             _gridParent = parent.transform;
             var gridParent = new GameObject("Grid Parent");
@@ -57,87 +60,137 @@ namespace Runtime.Managers
                     var cellData = new CellData
                     {
                         PassengerObject =  passenger,
-                        IsReadyToWalk = false,
-                        PassengerColorType =  passengerColor
+                        PassengerColorType =  passengerColor,
+                        IsOccupied =  true,
+                        IsReadyToWalk = false
 
                     };
 
                     
-                    var gridData = new GridData
-                    {
-                        gridPosition = new Vector2Int(x, z),
-                        isOccupied =  true
-
-                    };
-                    _gridData.Add( gridData,cellData);
+                    
+                    _gridData.Add( new Vector2Int( x,z) ,cellData);
                     obj.name = $"Grid_{x}_{z}";
                     obj.transform.position = new Vector3(x, 0, z);
                 }
             }
         }
 
+      
         private void CreateWaitingGrid()
         {
             var parent = new GameObject("Waiting Grid");
             parent.transform.parent = _gridParent;
             for (int i = 0; i < Row; i++)
             {
-               
-                var gridData = new GridData
-                {
-                     gridPosition =  new Vector2Int(i, Column),
-                     isOccupied =  false
-
-                };
-                _gridData.Add(gridData, null);
+                _waitingCells.Add( new Vector2Int( i , Column ) );
                 if(i >= 5) continue;
                 var obj = Instantiate(gridPrefab,parent.transform);
-                obj.name = $"Waiting_Grid_{i}";
+                obj.name = $"Waiting_Grid_{i},{Column}";
                 obj.transform.position = new Vector3(i + i* 0.5f , 0,   Column + 1);
+                
 
             }
         }
-
-        [Button("Check Grid Occupied")]
+        
+        [Button("Check Grid Is Occupied")]
         private void CheckGridIsOccupied()
         {
-            var gridMap = new Dictionary<Vector2Int, bool>();
-            var visited = new HashSet<Vector2Int>();
-            foreach (var data in _gridData.Keys)
-            {
-                gridMap.Add(data.gridPosition,data.isOccupied);
-                
-            }
+            
 
-            foreach (var data in _gridData.Keys)
+            foreach (var kvp in _gridData)
             {
-                if(visited.Contains(data.gridPosition) || !data.isOccupied) continue;
-                visited.Add(data.gridPosition);
-                var positionsToCheck = GetListPosition();
-                foreach (var position in positionsToCheck)
+                var visited = new HashSet<Vector2Int>();
+                var queue = new Queue<Vector2Int>();
+                var list = new List<Vector2Int>();
+                var startPos = kvp.Key;
+                var cell = kvp.Value;
+              
+                
+                if (cell == null || !cell.IsOccupied  || cell.IsReadyToWalk) continue;
+                if (visited.Contains(startPos)) continue;
+
+                visited.Add(startPos);
+                queue.Enqueue(startPos);
+
+                while (queue.Count > 0)
                 {
-                    var newPosition = data.gridPosition + position;
-                    if (gridMap.ContainsKey(newPosition))
+                    var current = queue.Dequeue();
+
+                    foreach (var dir in GetListPosition())
                     {
-                        if (!gridMap[newPosition])
+                        var next = current + dir;
+
+                        if (visited.Contains(next)) continue;
+                        
+                        // Grid içinde
+                        if (_gridData.TryGetValue(next, out var nextCell))
                         {
-                            var passenger = _gridData[data].PassengerObject;
-                            if (passenger != null)
+                            if (nextCell == null || !nextCell.IsOccupied)
                             {
-                                 passenger.GetComponent<IPassenger>().ChangeOutLine(5);
+                                Debug.Log("Found unoccupied cell at: " + next);
+                                visited.Add(next);
+                                queue.Enqueue(next);
+                                list.Add(next);
+                              
+                            
+                                
                             }
+
+                           
+                          
+                            
+                            
                         }
+
+                       
+                        // Waiting grid
+                         if (_waitingCells.Contains(next))
+                        {
+                            
+                            Debug.Log("Passenger at " + startPos + " can move to waiting cell at: " + next);
+                            var passengerObj = cell.PassengerObject;
+                            if (passengerObj == null) continue;
+                            passengerObj.GetComponent<IPassenger>().IsReadyToWalk(true);
+                            passengerObj.GetComponent<IPassenger>().Path.AddRange(list);
+                            Debug.Log(list.Count);
+                            cell.IsReadyToWalk = true;
+
+
+                        }
+                       
+                      
                     }
+                    
+                }
+                visited.Clear();
+                queue.Clear();
+            }
+        }
+
+
+
+        [Button("Clear Objects")]
+        private void ClearObjects()
+        {
+            
+            foreach (var obj in _path)
+            {
+                var objGrid = new Vector2Int(Mathf.RoundToInt(obj.transform.position.x),
+                    Mathf.RoundToInt(obj.transform.position.z));
+                if (_gridData.ContainsKey(objGrid)) 
+                {
+                    Debug.Log("Clearing object at: " + objGrid);
+                    _gridData[objGrid].IsOccupied = false;
+                    Destroy(_gridData[objGrid].PassengerObject);
+                    _gridData[objGrid].PassengerObject = null;
                 }
             }
             
-            
         }
-        
         
         private List<Vector2Int> GetListPosition()
         {
-            return new  List<Vector2Int>(){Vector2Int.down, Vector2Int.up, Vector2Int.left, Vector2Int.right};
+            return new  List<Vector2Int>(){Vector2Int.up, Vector2Int.right, Vector2Int.left};
         }
     }
 }
