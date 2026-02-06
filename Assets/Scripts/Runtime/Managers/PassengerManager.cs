@@ -98,6 +98,7 @@ namespace Runtime.Managers
                 foreach (var position in Path)
                 {
                     Vector3 targetPosition = new Vector3(position.x, transform.position.y, position.y);
+                    Debug.Log(targetPosition);
                     while (Vector3.Distance(transform.position, targetPosition) > 0.1f)
                     {
                         transform.position = Vector3.MoveTowards(transform.position, targetPosition, Time.deltaTime * 2f);

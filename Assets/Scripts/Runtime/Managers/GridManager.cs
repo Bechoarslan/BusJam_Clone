@@ -115,6 +115,7 @@ namespace Runtime.Managers
                 while (queue.Count > 0)
                 {
                     var current = queue.Dequeue();
+                    
 
                     foreach (var dir in GetListPosition())
                     {
@@ -130,7 +131,7 @@ namespace Runtime.Managers
                                 Debug.Log("Found unoccupied cell at: " + next);
                                 visited.Add(next);
                                 queue.Enqueue(next);
-                                cameFrom[next] = current;
+                                cameFrom[next] = current;    
                                 
                                 
                             }
@@ -148,7 +149,7 @@ namespace Runtime.Managers
                             var passengerObj = cell.PassengerObject;
                             if (passengerObj == null) return;
 
-                            var path = ReconstructPath(cameFrom, startPos, next);
+                            var path = ReconstructPath(cameFrom, startPos, current);
 
                           
                             for (int i = 0; i < path.Count - 1; i++)
